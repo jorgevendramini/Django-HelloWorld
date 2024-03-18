@@ -1,0 +1,85 @@
+mkdir "nome da pasta"
+cd "nome da pasta"
+python -m venv .venv
+.\.venv\Scripts\activate
+
+Ambiente virtual criando e agora Django
+
+pip install django
+django-admin startproject setup .
+python manage.py runserver
+
+
+--- 
+setup > settings.py
+
+language_code = 'pt-br'
+
+Time_zone = 'America/Sao_Paulo'
+
+------
+
+criando app
+
+python manage.py startapp todos
+
+--
+
+instalando a app no projeto:
+
+setup > settings encontre INSTALLED_APPS e add de acordo:
+
+'todos.apps.TodosConfig'
+
+---
+
+Agora podemos trabalhar no app
+
+em Views.py add:
+
+from django.http import HttpResponse
+
+def home(request):
+  return HttpResponse("Olá Mundo!!") (pode por como h1 tbm)
+
+------
+
+precisamos explicar como esse response vai ser chamado:
+
+setup > urls add:
+
+from todos.views import home
+
+path('', home),
+
+-------------------
+
+em todos, criar pasta templates, home.html
+
+<h1>Olá mundo!!!</h1>
+
+depois em todo > views:
+
+alterar o return para:
+
+return render(request, "todos/home.html")
+
+--------------
+
+todolist:
+
+todo > models.py=
+
+class Todo(models.Model):
+	title = models.CharField(max_length=100, null=False, blank=False)
+	created_at = models.DateTimeField(auto_now_add=True, null=False, blank=False)
+	deadline = models.DateTimeField(null=False, blank=False)
+	finished_at = models.DateTimeField(null=True)
+
+---------------
+
+python manage.py migrate
+
+python manage.py makemigrations
+
+python manage.py migrate
