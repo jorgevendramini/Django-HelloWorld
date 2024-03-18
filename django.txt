@@ -3,6 +3,8 @@ cd "nome da pasta"
 python -m venv .venv
 .\.venv\Scripts\activate
 
+(Se activate não funcionar, tente: Set-ExecutionPolicy RemoteSigned -Scope Process)
+
 Ambiente virtual criando e agora Django
 
 pip install django
