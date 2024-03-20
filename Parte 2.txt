@@ -1,0 +1,107 @@
+criar view que vai listar as tarefas que tem cadastradas no banco de dados:
+
+todo >  views: (apagar def home e importação, apagar home e import da urls.py tbm)
+
+def todo_list(request):
+	return render(request, "todos/todo_list.html")
+
+todos > templates: (apagar "home.html" e criar "todo_list.html")
+
+	<h1>Lista de Tarefas</h1>
+
+setup > urls: from todos.views import todo_list
+	path("", todo_list)
+
+python manage.py runserver (verificar se tudo ok)
+
+------------------
+(baixar plugin "django" de Baptiste Darthenay) ideia é add sintaxes para os templates do Django. 
+Então posso ir no meu html e colocar para o vs code entender como Django html, mas para não fazer manualmente toda vez, vamos automatizar:
+
+Em settings.json:
+ "files.associations": {
+	"**/templates/**/*.html": "django-html"
+},
+"emmet.includeLanguages": {
+	"django-html": "html"
+}
+
+Testar com teste.html para ver se funcionou corretamente. Emmet = intelisense html
+
+-----------------
+
+e agora eu quero exibir as tarefas que tenho cadastradas, então o que preciso fazer:
+eu preciso ir na minha view buscar as tarefas do banco de dados e de alguma maneira enviar essas tarefas para o meu template e, nele, exibir essa informações. Como fazer: 
+** Explicação de como funciona mostrar variáveis dentro do template **
+
+todos >  views:
+
+def todo_list(request):
+	nome = "CLeyson"
+	alunos = ["Elton Fonseca", "Ariel Sardinha", "Anna Beatriz"]
+	return render(request, "todos/todo_list.html", {"nome": nome, "alunos": alunos})
+
+todos > templates:
+
+{{ nome }}
+{{ alunos }}
+<ul>
+	{% for aluno in alunos %}
+		<li>{{ aluno }}</li>
+	{% endfor %}
+</ul>
+
+** demonstrar como mostrar um banco de dados dentro do template ** Apagar variáveis**
+
+from .models import Todo
+
+def todo_list(request):
+	todos = Todo.objects.all()
+**objects é quem a gente chama para manipular o banco de dados e como eu quero todos eu chamo all**
+	return render(request, "todos/todo_list.html", {"todos": todos})
+
+template:
+
+<ul>
+	{% for todo in todos %}
+		<li>{{ todo.title }}</li>
+	{% endfor %}
+</ul>
+
+nada vai aparecer porque não temos nada no Banco de dados
+
+--------------------------------------
+
+instalar extensão MySQL de Weijan Chen para inserir manualmente no bd. aparece Database na barra lateral do vsCode, senão aparecer botão direito e habilitar ela
+
+database > create connection > sqlite > install sqlite > sqlite to dbPath (colocar o caminho pro db, db.sqlite3 ) > save.
+
+sqlite viewer não é possível modificar, apenas ver. Com este é possível inserir dados no bd
+
+database > todos.todo > insert new row by dialog
+inserir titulo (Estudar Django), created_at e deadline
+
+python manage.py runserver (mostra que já está puxando do banco de dados)
+
+------------------------------------
+
+getbootstrap.com > docs > with css and js links
+
+** bootstrap-html bloco de notas **
+
+------------------------------------
+
+Alterar em todos > models:
+
+deadline e finished_at para DateField
+
+Tem que fazer 
+python manage.py makemigrations
+python manage.py migrate
+
+ele cria uma nova migração, que tem dependências no caso a migração anterior e as operações são para alterar esses dados em específicos.
+
+SE ERRO: apagar db.sqlite3 e python manage.py migrate
+Refazer conexão: database > create connection > sqlite > install sqlite > sqlite to dbPath (colocar o caminho pro db, db.sqlite3 ) > save.
+
+1:27:08
