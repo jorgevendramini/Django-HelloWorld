@@ -1,0 +1,149 @@
+todos > views:
+
+from django.views.generic import ListView, Create View, UpdateView
+
+class TodoUpdateView(UpdateView):
+	model = Todo
+	fields = ["title", "deadline"]
+	success_url = reverse_lazy("todo_list")
+
+a diferença é que ele vai procurar uma tarefa específica para atualizar. então eu preciso saber de alguma maneira qual é a tarefa que eu quero editar e podemos fazer isso pelo ID ou chave primária porque por padrão updateview vai procurar por ela.
+
+setup > urls:
+
+from todos.views import TodoListView, TodoCreateView, TodoUpdateView
+
+path("update/<int:pk>", TodoUpdateView.as_view(), name="todo_update")
+
+ai a gente tem um valor dinâmico nessa rota que vai ser justamente o id da tarefa que quero atualizar. então se eu colocar /1 vai ser a primeira linha ou id numero 1, /4 vai ser o ID 4. No django para a gente definir que uma parte da rota é uma variável, a gente colocar entre <>, o tipo da variável e, como por padrão o updateView procura pela chave primária, temos o pk.
+
+depois disso, runserver já rodando, 
+
+localhost:8000/update/1
+
+veja que ele já trás as informaçoes da ID1 usando o template form de cadastro e podemos alterar e salvar
+
+------- 
+
+Podemos alterar o título ao editar dessa forma:
+
+em todo_form.html > nova tarefa:
+
+{% if todo.pk %}
+<h1>Editar Tarefa</h1>
+{% else %}
+<h1>Nova Tarefa</h1>
+{% endif %}
+
+Mesma coisa no title:
+{% if todo.pk %}
+Editar Tarefa
+{% else %}
+Nova Tarefa
+{% endif %}
+
+-------
+
+Em todo_list.html:
+
+entre os botões concluir e excluir:
+criar botão editar: ** add pk após o erro **
+
+<a href="{% url 'todo_update' pk=todo.pk %}" class="btn btn-secondary btn-sm">Editar</a>
+
+Isso vai dar um erro e explicar que é porque a rota tem uma variável e ela não foi encontrada
+
+------------------
+DELETAR
+
+todos > views:
+
+django.views.generic importar DeleteView
+
+class TodoDeleteView(DeleteView):
+	model = Todo
+
+setup > urls: 
+
+todos.views importar DeleteView
+
+path("delete/<int:pk>", TodoDeleteView.as_view(), name="todo_delete"),
+
+templates > todo_list:
+
+botão excluir:
+href="{% url 'todo_delete' pk=todo.pk %}"
+
+runserver e erro, confirm delete template not found todo_confirm_delete.html
+
+-----
+Criar template todo_confirm_delete.html em templates > todos
+
+{% extends 'base.html' %}
+
+{% block page_title %}
+	Excluir Tarefa
+{% endblock page_title %}
+
+{% block content %}
+	<h1>Excluir Tarefa?</h1>
+	<p>Tem certeza que deseja excluir a tarefa <strong>{{ todo.title }}</strong>?</p>
+
+<form method="POST">
+	{% csrf_token %}
+
+	<button type="submit" class="btn btn-danger">Excluir</button>
+	<a href="{% url 'todo-list' %}" class="btn btn-primary">Cancelar</a>
+</form>
+{% endblock content %}
+
+
+Temos que criar um form para enviar uma requisição POST para o formulário.
+** lembrar que todo form precisa do CSRF_TOKEN
+
+Depois disso ele vai dar um erro de success_url
+
+todos > views:
+
+add: success_url = reverse_lazy("todo_list")
+
+runserver
+
+-------------------- Crud completo
+
+Falta apenas agora a finished_at que vai indicar a conclusão da tarefa
+
+todso > views
+
+django.views.generic importar View
+
+class TodoCompleteView(View):
+	def get(self, request, pk):
+		Todo.objects.get(pk=pk) #tem outra forma melhor
+#ele procura a chave primeira e verifica com o parametro inserido na função
+
+from django.shortcuts import get_object_or_404, redirect
+from datetime import date
+
+class TodoCompleteView(View):
+	def get(self, request, pk):
+		todo = get_object_or_404(Todo, pk=pk)
+		todo.finished_at = date.today()
+		todo.save()
+		return redirect("todo_list")
+
+
+setup > urls:
+
+todos.views import TodoCompleteView
+
+path("complete/<int:pk>", TodoCompleteView.as_view(), name="todo_complete"),
+
+-----------
+
+todo_list:
+
+concluir:
+
+href="{% url 'todo_complete' pk=todo.pk %}"
+
