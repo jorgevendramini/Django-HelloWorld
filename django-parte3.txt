@@ -1,0 +1,209 @@
+Vamos trabalhar agora com ClassBasedViews,CBV, até agora estavamos trabalhando com function based views, FBV. Classes são o recomendado atualmente no Django pois além de manter mais organizado o código, ele também permite o conceito de heranças. Crud entre outros são códigos que utilizamos diariamente e isso serve para minimizar as linhas de código, deixar ele mais legível e rápido.
+
+Então vamos lá:
+
+todos > views:
+
+from django.views.generic import ListView
+
+class TodoListView(ListView):
+	model = Todo
+#Explicar que a função toda é basicamente essa classe
+#apagar função e importar render
+
+setup > url:
+
+- trocar import e path todo_list para: 
+from todos.views import TodoListView
+
+path("", TodoListView.as_view()),
+
+runserver e depois explicar a mudança nos templates:
+
+if e for trocar todo para todo_list
+
+Como ele sabe qual é o template: ListView vai procurar por padrão uma template que tenha o mesmo do app, no caso todos e que tenha o nome do meu modelo, Todo, com _list, por isso a gente já utilizou a padronização
+
+--- agora a gente cria a createview
+
+todos > views:
+
+from django.views.generic import ListView, CreateView
+
+class TodoCreateView(CreateView):
+	model = Todo
+
+setup > url:
+
+from todos.views import TodoListView, TodoCreateView
+
+path("create", TodoCreateView.as_view()),
+
+runserver e explicar erro fields, que além de model, tem que criar o campo fields no TodoCreateView, que seriam quais campos eu quero permitir que o usuário preencha:
+
+title eu quero
+deadline também
+created_at vai ser criado automaticamente
+finished_at vai ser preenchido quando ele marcar que a tarefa foi concluída
+
+todos > views:
+
+fields = ["title", "deadline"]
+
+runserver e ver novo erro que ele não encontra o template e está procurando um arquivo todo_form.html
+
+criar arquivo todo_form.html
+
+copiar código do todo_list e tirar todo main menos h1 e substituir por "Nova Tarefa", trocar título por "TWTodos - Nova Tarefa". runserver
+Não precisa criar formulário na mão, quando a gente usou CreateView e campo fields, ele cria uma classe de formulário pra gente que ele envia para o template no contexto de forms
+
+Abaixo do H1: {{ form }}
+
+criar html:
+
+<form method="POST">
+{{ form }}
+
+<button type="submit">Salvar</button>
+</form>
+
+exibir erro CSRF falhou. essa é uma das mecânicas de segurança que o Django implementa. Esse é um tipo de ataque que é Cross-Site Request Forgery. Basicamente é quando um outro site atráves de algum tipo de script tenta realizar uma requisição para outro site que está aberto no mesmo navegador. por exemplo uma outra aba ali executando um script js para conseguir submeter um formulário
+para evitar isso criar um input que fica escondido com uma chave que só o Django sabe. Com isso ele garante que a requisição foi feita pelo próprio site e não por um site externo.
+
+{% csrf_token %} #antes do form
+
+exibir html da página e mostrar input hidden
+
+runserver e erro de redirecionamento
+
+setup > url:
+path("", TodoListView.as_view(),name="todo_list"),
+path("create", TodoCreateView.as_view(),name="todo_create"),
+
+todos > views:
+
+from django.urls import reverse_lazy 
+
+#reverselazy serve para podermos passar o nome da rota ele redireciona para a rota real.
+#abaixo de fields:
+
+success_url = reverse_lazy("todo_list")
+
+runserver e mostrar cadastro
+
+templates > todo_list:
+
+#abaixo de {% endif %}
+
+<a href="{% url 'todo_create' %}" class="btn btn-primary">Nova tarefa</a>
+
+-----------------------------
+Melhorar estilização dos forms do Django com uma biblioteca
+
+django-crispy-forms
+
+pip install crispy-bootstrap5
+
+INSTALLED_APPS = 
+"crispy_forms",
+"crispy_bootstrap5",
+
+-----
+
+Organizar installed apps:
+
+DJANGO_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+]
+
+THIRD_PARTY_APPS = [
+     "crispy_forms",
+     "crispy_bootstrap5",
+]
+
+MY_APPS = [
+    "todos.apps.TodosConfig",
+]
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + MY_APPS
+
+e instalar no final de settings.py:
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+--------
+
+templates > todo_form:
+
+## antes de doctype html:
+
+{% load crispy_forms_tags %}
+
+## e no form:
+
+<form method="POST">
+{% csrf_token %}
+
+{{ form|crispy }}
+
+<button type="submit" class="btn btn-primary">Salvar</button>
+</form>
+
+----------
+nome em ingles, mudar aqui:
+todos > models: 
+
+models.CharField(verbose_name="Título", max_length..
+models.DateField(verbose_name="Data de entrega", null..
+
+----------
+
+eliminar required no html F12, "hackear" para salvar, mas mesmo assim django para isso. Mostrar
+
+------------------------------
+
+Separar arquivos:
+
+templates > criar base.html ** não é na pasta todos, é na pasta templates **
+
+copiar todo_form e eliminar: load crispy no começo e tudo que tem no main **deixar main**
+
+<title>TWTodos - {% block page_title %}{% endblock page_title %}</title>
+
+dentro de main:
+{% block content %}{% endblock content %}
+
+--------
+# todo_list.html
+
+add ao topo do documento:
+
+{% extends 'base.html' %}
+
+{% block page_title %} Lista de Tarefas {% endblock page_title %}
+
+colocar tudo desde o H1 até antes de </main> dentro do {% block content %} e {% endblock content %}
+
+----------
+# todo_form.html
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block page_title %} Nova Tarefa {% endblock page_title %}
+
+{% block content %}
+	do h1 até </form>
+{% endblock content %}
+
+-----
+#base.htm
+
+muda href de navbar TWTodos para href="{% url 'todo_list' %}"
